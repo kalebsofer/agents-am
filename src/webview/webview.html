@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; 
+        style-src 'unsafe-inline'; 
+        script-src 'unsafe-inline' vscode-resource:;
+        connect-src vscode-webview:;">
+    <style>
+        body { 
+            padding: 10px; 
+            color: var(--vscode-editor-foreground);
+            font-family: var(--vscode-font-family);
+        }
+
+        #chat-container { 
+            height: 70vh; 
+            overflow-y: auto; 
+            margin-bottom: 60px;
+        }
+
+        .message { 
+            margin: 10px 0; 
+            padding: 10px; 
+            border-radius: 5px; 
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            max-width: 100%;
+            overflow-x: auto;
+        }
+
+        .user-message { 
+            background: var(--vscode-input-background);
+            border: 1px solid var(--vscode-input-border);
+        }
+
+        .ai-message { 
+            background: var(--vscode-editor-background);
+            border: 1px solid var(--vscode-editor-lineHighlightBorder);
+        }
+
+        #input-container { 
+            position: fixed; 
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--vscode-editor-background);
+            padding: 8px;
+            display: flex;
+            gap: 4px;
+        }
+
+        #question-input { 
+            flex-grow: 1;
+            padding: 4px 8px;
+            background: var(--vscode-input-background);
+            color: var(--vscode-input-foreground);
+            border: 1px solid var(--vscode-input-border);
+            border-radius: 4px;
+        }
+
+        #send-btn {
+            padding: 4px 8px;
+            background: var(--vscode-button-background);
+            color: var(--vscode-button-foreground);
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        #send-btn:hover {
+            background: var(--vscode-button-hoverBackground);
+        }
+
+        /* Loading indicator styles */
+        .loading {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+            background: var(--vscode-editor-background);
+            border: 1px solid var(--vscode-editor-lineHighlightBorder);
+        }
+
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(150, 150, 150, 0.2);
+            border-radius: 50%;
+            border-top-color: var(--vscode-progressBar-background);
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 10px;
+        }
+
+        .loading-text {
+            color: var(--vscode-foreground);
+            opacity: 0.8;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Disabled button state */
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <div id="chat-container"></div>
+    <div id="input-container">
+        <input type="text" id="question-input" placeholder="Ask a question...">
+        <button id="send-btn">Send</button>
+    </div>
+    <script>
+        (function() {
+            const vscode = acquireVsCodeApi();
+            const chatContainer = document.getElementById('chat-container');
+            const questionInput = document.getElementById('question-input');
+            const sendBtn = document.getElementById('send-btn');
+            let isLoading = false;
+
+            // Add messages to the chat
+            function addMessage(type, content) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = 'message ' + type + '-message';
+                messageDiv.textContent = content;
+                chatContainer.appendChild(messageDiv);
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            }
+
+            // Show loading indicator
+            function showLoading() {
+                if (isLoading) return;
+                isLoading = true;
+                
+                // Disable input and button while loading
+                questionInput.disabled = true;
+                sendBtn.disabled = true;
+                
+                // Create loading element
+                const loadingDiv = document.createElement('div');
+                loadingDiv.className = 'loading';
+                loadingDiv.id = 'loading-indicator';
+                
+                const spinner = document.createElement('div');
+                spinner.className = 'spinner';
+                
+                const loadingText = document.createElement('span');
+                loadingText.className = 'loading-text';
+                loadingText.textContent = 'Assistant is thinking...';
+                
+                loadingDiv.appendChild(spinner);
+                loadingDiv.appendChild(loadingText);
+                chatContainer.appendChild(loadingDiv);
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            }
+            
+            // Hide loading indicator
+            function hideLoading() {
+                if (!isLoading) return;
+                isLoading = false;
+                
+                // Re-enable input and button
+                questionInput.disabled = false;
+                sendBtn.disabled = false;
+                
+                // Remove loading indicator
+                const loadingIndicator = document.getElementById('loading-indicator');
+                if (loadingIndicator) {
+                    loadingIndicator.remove();
+                }
+            }
+
+            // Send a message
+            function sendMessage() {
+                const question = questionInput.value.trim();
+                if (question) {
+                    addMessage('user', question);
+                    showLoading();
+                    vscode.postMessage({ 
+                        command: 'askQuestion',
+                        text: question 
+                    });
+                    questionInput.value = '';
+                }
+            }
+
+            // Add click handler for send button
+            sendBtn.addEventListener('click', () => {
+                sendMessage();
+            });
+
+            // Add enter key handler
+            questionInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
+
+            // Handle messages from the extension
+            window.addEventListener('message', event => {
+                const message = event.data;
+                
+                if (message.type === 'response') {
+                    hideLoading();
+                    addMessage('ai', message.content);
+                } else if (message.type === 'error') {
+                    hideLoading();
+                    addMessage('ai', `Error: ${message.content}`);
+                }
+            });
+
+            // Add initial message
+            addMessage('ai', 'Assistant is ready. How can I help you?');
+        })();
+    </script>
+</body>
+</html> 
