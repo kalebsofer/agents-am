@@ -30,10 +30,11 @@ cd agent-workshop
 npm install
 
 npm run compile
-
-# To test the extension, run in debugging mode:
-# Press F5 or "Run, Start Debugging"
 ```
+### Test the extension:
+1. Run in debugging mode: Press F5 or "Run, Start Debugging"
+2. From Extension Development Host, open command palette: `Ctrl+Shift+P`
+3. Select `openAIPanel` (agent-workshop.openAIPanel)
 
 ## API Keys
 

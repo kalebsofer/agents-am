@@ -93,4 +93,6 @@ export class AIPanel {
             }
         }
     }
+
+    // TODO: Implement chat functionality
 } 

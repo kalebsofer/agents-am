@@ -19,7 +19,7 @@ try {
 }
 
 export const SECTION = 'agent-workshop';
-export const API_KEY = 'openaiApiKey';
+export const API_KEY = 'ApiKey';
 export const MODEL = 'gpt-4o-mini-2024-07-18';
 export const DEFAULT_MODEL = 'gpt-4o-mini-2024-07-18';
 export const OPENAI_API_ENDPOINT = 'https://api.openai.com/v1/chat/completions';
@@ -32,7 +32,7 @@ export function getConfig(): vscode.WorkspaceConfiguration {
 export function getApiKey(): string {
     const config = getConfig();
     const configKey = config.get<string>(API_KEY, '');
-    return configKey || process.env.OPENAI_API_KEY || '';
+    return configKey || process.env.API_KEY || '';
 }
 
 export function getModel(): string {

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,23 +7,36 @@
         style-src 'unsafe-inline'; 
         script-src 'unsafe-inline' vscode-resource:;
         connect-src vscode-webview:;">
+    <title>VS Code Assistant</title>
     <style>
+        :root {
+            --spacing-xs: 0.25rem;
+            --spacing-sm: 0.5rem;
+            --spacing-md: 0.75rem;
+            --spacing-lg: 1rem;
+            --spacing-xl: 4rem;
+            --border-radius: 0.3rem;
+        }
+        
         body { 
-            padding: 10px; 
+            padding: var(--spacing-lg); 
             color: var(--vscode-editor-foreground);
             font-family: var(--vscode-font-family);
+            margin: 0;
+            line-height: 1.5;
         }
 
         #chat-container { 
             height: 70vh; 
             overflow-y: auto; 
-            margin-bottom: 60px;
+            margin-bottom: var(--spacing-xl);
+            scroll-behavior: smooth;
         }
 
         .message { 
-            margin: 10px 0; 
-            padding: 10px; 
-            border-radius: 5px; 
+            margin: var(--spacing-md) 0; 
+            padding: var(--spacing-md); 
+            border-radius: var(--border-radius); 
             white-space: pre-wrap;
             word-wrap: break-word;
             max-width: 100%;
@@ -46,52 +59,64 @@
             left: 0;
             right: 0;
             background: var(--vscode-editor-background);
-            padding: 8px;
+            padding: var(--spacing-sm);
             display: flex;
-            gap: 4px;
+            gap: var(--spacing-xs);
+            border-top: 1px solid var(--vscode-panel-border);
         }
 
         #question-input { 
             flex-grow: 1;
-            padding: 4px 8px;
+            padding: var(--spacing-xs) var(--spacing-sm);
             background: var(--vscode-input-background);
             color: var(--vscode-input-foreground);
             border: 1px solid var(--vscode-input-border);
-            border-radius: 4px;
+            border-radius: var(--border-radius);
+            font-size: inherit;
+        }
+
+        #question-input:focus {
+            outline: 2px solid var(--vscode-focusBorder);
+            outline-offset: 1px;
         }
 
         #send-btn {
-            padding: 4px 8px;
+            padding: var(--spacing-xs) var(--spacing-sm);
             background: var(--vscode-button-background);
             color: var(--vscode-button-foreground);
             border: none;
-            border-radius: 4px;
+            border-radius: var(--border-radius);
             cursor: pointer;
+            font-size: inherit;
         }
 
         #send-btn:hover {
             background: var(--vscode-button-hoverBackground);
         }
 
-        /* Loading indicator styles */
+        #send-btn:focus {
+            outline: 2px solid var(--vscode-focusBorder);
+            outline-offset: 1px;
+        }
+
         .loading {
             display: flex;
             align-items: center;
-            margin: 10px 0;
-            padding: 10px;
-            border-radius: 5px;
+            margin: var(--spacing-md) 0;
+            padding: var(--spacing-md);
+            border-radius: var(--border-radius);
             background: var(--vscode-editor-background);
             border: 1px solid var(--vscode-editor-lineHighlightBorder);
         }
 
         .spinner {
-            width: 20px;
-            height: 20px;
-            border: 3px solid rgba(150, 150, 150, 0.2);
+            width: 1.25rem;
+            height: 1.25rem;
+            border: 0.2rem solid rgba(150, 150, 150, 0.2);
             border-radius: 50%;
             border-top-color: var(--vscode-progressBar-background);
             animation: spin 1s ease-in-out infinite;
-            margin-right: 10px;
+            margin-right: 0.625rem;
         }
 
         .loading-text {
@@ -103,52 +128,79 @@
             to { transform: rotate(360deg); }
         }
 
-        /* Disabled button state */
         button:disabled {
             opacity: 0.6;
             cursor: not-allowed;
         }
+
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border-width: 0;
+        }
     </style>
 </head>
 <body>
-    <div id="chat-container"></div>
-    <div id="input-container">
-        <input type="text" id="question-input" placeholder="Ask a question...">
-        <button id="send-btn">Send</button>
-    </div>
+    <main>
+        <section id="chat-container" aria-live="polite"></section>
+        <form id="input-container" aria-label="Chat input">
+            <label for="question-input" class="sr-only">Enter your question</label>
+            <input type="text" id="question-input" placeholder="Ask a question..." autocomplete="off">
+            <button type="submit" id="send-btn" aria-label="Send message">Send</button>
+        </form>
+    </main>
     <script>
         (function() {
             const vscode = acquireVsCodeApi();
             const chatContainer = document.getElementById('chat-container');
+            const questionForm = document.getElementById('input-container');
             const questionInput = document.getElementById('question-input');
             const sendBtn = document.getElementById('send-btn');
             let isLoading = false;
 
-            // Add messages to the chat
+            // Add initial greeting message
+            addMessage('ai', 'Assistant is ready. How can I help you?');
+
             function addMessage(type, content) {
                 const messageDiv = document.createElement('div');
                 messageDiv.className = 'message ' + type + '-message';
                 messageDiv.textContent = content;
+                
+                if (type === 'user') {
+                    messageDiv.setAttribute('aria-label', 'You: ' + content);
+                } else {
+                    messageDiv.setAttribute('aria-label', 'Assistant: ' + content);
+                }
+                
                 chatContainer.appendChild(messageDiv);
+                scrollToBottom();
+            }
+
+            function scrollToBottom() {
                 chatContainer.scrollTop = chatContainer.scrollHeight;
             }
 
-            // Show loading indicator
             function showLoading() {
                 if (isLoading) return;
                 isLoading = true;
                 
-                // Disable input and button while loading
                 questionInput.disabled = true;
                 sendBtn.disabled = true;
                 
-                // Create loading element
                 const loadingDiv = document.createElement('div');
                 loadingDiv.className = 'loading';
                 loadingDiv.id = 'loading-indicator';
+                loadingDiv.setAttribute('aria-live', 'polite');
                 
                 const spinner = document.createElement('div');
                 spinner.className = 'spinner';
+                spinner.setAttribute('aria-hidden', 'true');
                 
                 const loadingText = document.createElement('span');
                 loadingText.className = 'loading-text';
@@ -157,26 +209,23 @@
                 loadingDiv.appendChild(spinner);
                 loadingDiv.appendChild(loadingText);
                 chatContainer.appendChild(loadingDiv);
-                chatContainer.scrollTop = chatContainer.scrollHeight;
+                scrollToBottom();
             }
             
-            // Hide loading indicator
             function hideLoading() {
                 if (!isLoading) return;
                 isLoading = false;
                 
-                // Re-enable input and button
                 questionInput.disabled = false;
                 sendBtn.disabled = false;
+                questionInput.focus();
                 
-                // Remove loading indicator
                 const loadingIndicator = document.getElementById('loading-indicator');
                 if (loadingIndicator) {
                     loadingIndicator.remove();
                 }
             }
 
-            // Send a message
             function sendMessage() {
                 const question = questionInput.value.trim();
                 if (question) {
@@ -190,20 +239,18 @@
                 }
             }
 
-            // Add click handler for send button
-            sendBtn.addEventListener('click', () => {
+            questionForm.addEventListener('submit', (e) => {
+                e.preventDefault();
                 sendMessage();
             });
 
-            // Add enter key handler
             questionInput.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') {
+                if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault();
                     sendMessage();
                 }
             });
 
-            // Handle messages from the extension
             window.addEventListener('message', event => {
                 const message = event.data;
                 
@@ -215,9 +262,6 @@
                     addMessage('ai', `Error: ${message.content}`);
                 }
             });
-
-            // Add initial message
-            addMessage('ai', 'Assistant is ready. How can I help you?');
         })();
     </script>
 </body>
