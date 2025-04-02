@@ -1,10 +1,10 @@
 {
   "name": "agent-workshop",
   "displayName": "AI Agent Workshop",
-  "description": "AI-powered code assistant using OpenAI API",
-  "version": "0.0.3",
+  "description": "AI-powered code assistant",
+  "version": "0.0.1",
   "engines": {
-    "vscode": "^1.97.0"
+    "vscode": "^1.98.0"
   },
   "activationEvents": [
     "onCommand:agent-workshop.openAIPanel"
@@ -14,8 +14,7 @@
     "commands": [
       {
         "command": "agent-workshop.openAIPanel",
-        "title": "Open AI Assistant Panel",
-        "icon": "$(lightbulb)"
+        "title": "Open AI Assistant Panel"
       }
     ],
     "configuration": {
@@ -29,7 +28,7 @@
         "agent-workshop.openaiModel": {
           "type": "string",
           "default": "gpt-4o-mini-2024-07-18",
-          "description": "OpenAI model to use (e.g., gpt-o3-mini, gpt-3.5-turbo, gpt-4)"
+          "description": "Default model, must match config.ts"
         }
       }
     }

@@ -1,15 +1,11 @@
-/**
- * Type definitions for chat functionality
- */
-
 export interface Message {
-    role: 'user' | 'assistant' | 'system';
+    role: 'user' | 'system';
     content: string;
     timestamp?: number;
 }
 
 export interface AIMessage {
-    role: 'user' | 'assistant' | 'system';
+    role: 'assistant';
     content: string;
 }
 
