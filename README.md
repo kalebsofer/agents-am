@@ -1,6 +1,6 @@
 # Agents - Morning Session
 
-Our first task is to get a functioning extension up and running with a basic chat interface.
+Our first task is to get a functioning extension up and running with a simple chat interface.
 
 Your extension should:
 - Have a panel with a text input and a send button. ✅
@@ -16,9 +16,9 @@ Your extension should:
 
 ## You Need to Implement
 
-- 🛠️ Chat functionality: [AIPanel.ts](src/panels/AIPanel.ts)
-- 🛠️ A chat manager to handle conversations
-- 🛠️ API integration
+- [ ] Chat functionality: [AIPanel.ts](src/panels/AIPanel.ts)
+- [ ] A chat manager to handle conversations
+- [ ] API integration
 
 ## Getting Started
 
@@ -44,7 +44,7 @@ Create a `.env` file in the root of the project and add your API key.
 - I will ping a temporary key on Discord (OpenAI). 
 - This template uses the OpenAI API, you are free to choose your preferred LLM.
 
-Note, [src/config.ts](src/config.ts) is configured for OpenAI, you will need to tweak it for your preferred LLM.
+**Note, [config.ts](src/config.ts) is configured for OpenAI, you will need to tweak it for your preferred LLM.**
 
 
 ## Resources
