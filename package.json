@@ -14,7 +14,7 @@
     "commands": [
       {
         "command": "agent-workshop.openAIPanel",
-        "title": "Open AI Assistant Panel"
+        "title": "Open AI Panel"
       }
     ],
     "configuration": {

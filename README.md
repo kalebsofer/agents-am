@@ -22,19 +22,27 @@ Your extension should:
 
 ## Getting Started
 
+### Prerequisites:
+- [Node.js](https://nodejs.org/en/download)
+
+### Clone and test:
 ```bash
 git clone https://github.com/kalebsofer/agents-am
 
-cd agent-workshop
+cd agents-am
 
 npm install
 
 npm run compile
 ```
 ### Test the extension:
-1. Run in debugging mode: Press F5 or "Run, Start Debugging"
-2. From Extension Development Host, open command palette: `Ctrl+Shift+P`
-3. Select `openAIPanel` (agent-workshop.openAIPanel)
+1. With the project open, run in debugging mode: 
+    - Press F5 or
+    - From the Title Bar/Application Menu: "Run --> Start Debugging --> VS Code Extension"
+2. From Extension Development Host, open command palette. 
+    - `Ctrl+Shift+P` (Windows/Linux)
+    - `Cmd+Shift+P` (MacOS)
+3. Search and select `Open AI Panel` (agent-workshop.openAIPanel)
 
 ## API Keys
 
