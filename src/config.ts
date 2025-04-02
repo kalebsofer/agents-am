@@ -1,6 +1,4 @@
 /**
- * config.ts
- * 
  * Loads environment variables and provides access to settings.
  */
 
